@@ -326,13 +326,13 @@ class RenderType(object):
             lines = []
             for line in f["doc"].splitlines():
                 if len(line) > 0 and line[0] == "#":
-                    line = ("#" * depth) + line
+                    line = ("#" * (depth if depth < 6 else 6)) + line
                 lines.append(line)
             f["doc"] = "\n".join(lines)
 
             _, frg = urllib.parse.urldefrag(f["name"])
             num = self.toc.add_entry(depth, frg)
-            doc = u"%s %s %s\n" % (("#" * depth), num, frg)
+            doc = u"%s %s %s\n" % (("#" * (depth if depth < 6 else 6)), num, frg)
         else:
             doc = u""
 

@@ -163,6 +163,13 @@ def process_type(t,             # type: Dict[str, Any]
         if "extends" in t:
             for e in aslist(t["extends"]):
                 g.add((classnode, RDFS.subClassOf, URIRef(e)))
+
+        if "mapPredicate" in t:
+            context[recordname] = {
+                "@id": predicate,
+                "mapPredicate": t["mapPredicate"]
+            }
+
     elif t["type"] == "enum":
         _logger.debug("Processing enum %s", t.get("name"))
 

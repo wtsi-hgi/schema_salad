@@ -442,35 +442,38 @@ class Loader(object):
             if value == u"@id":
                 self.identifiers.append(key)
                 self.identity_links.add(key)
-            elif isinstance(value, dict) and value.get(u"@type") == u"@id":
-                self.url_fields.add(key)
-                if u"refScope" in value:
-                    self.scoped_ref_fields[key] = value[u"refScope"]
-                if value.get(u"identity", False):
-                    self.identity_links.add(key)
-            elif isinstance(value, dict) and value.get(u"@type") == u"@vocab":
-                self.url_fields.add(key)
-                self.vocab_fields.add(key)
-                if u"refScope" in value:
-                    self.scoped_ref_fields[key] = value[u"refScope"]
-                if value.get(u"typeDSL"):
-                    self.type_dsl_fields.add(key)
-            if isinstance(value, dict) and value.get(u"noLinkCheck"):
-                self.nolinkcheck.add(key)
+            if isinstance(value, dict):
+                if value.get(u"@type") == u"@id":
+                    self.url_fields.add(key)
+                    if u"refScope" in value:
+                        self.scoped_ref_fields[key] = value[u"refScope"]
+                    if value.get(u"identity", False):
+                        self.identity_links.add(key)
+                elif value.get(u"@type") == u"@vocab":
+                    self.url_fields.add(key)
+                    self.vocab_fields.add(key)
+                    if u"refScope" in value:
+                        self.scoped_ref_fields[key] = value[u"refScope"]
+                    if value.get(u"typeDSL"):
+                        self.type_dsl_fields.add(key)
 
-            if isinstance(value, dict) and value.get(u"mapSubject"):
-                self.idmap[key] = value[u"mapSubject"]
+                if value.get(u"noLinkCheck"):
+                    self.nolinkcheck.add(key)
 
-            if isinstance(value, dict) and value.get(u"mapPredicate"):
-                self.mapPredicate[key] = value[u"mapPredicate"]
+                if value.get(u"mapSubject"):
+                    self.idmap[key] = value[u"mapSubject"]
 
-            if isinstance(value, dict) and u"@id" in value:
-                self.vocab[key] = value[u"@id"]
-            elif isinstance(value, six.string_types):
+                if value.get(u"mapPredicate"):
+                    self.mapPredicate[key] = value[u"mapPredicate"]
+
+                if u"@id" in value:
+                    self.vocab[key] = value[u"@id"]
+
+                if value.get(u"subscope"):
+                    self.subscopes[key] = value[u"subscope"]
+
+            if isinstance(value, six.string_types):
                 self.vocab[key] = value
-
-            if isinstance(value, dict) and value.get(u"subscope"):
-                self.subscopes[key] = value[u"subscope"]
 
         for k, v in self.vocab.items():
             self.rvocab[self.expand_url(v, u"", scoped_id=False)] = k
@@ -622,17 +625,19 @@ class Loader(object):
                         val = idmapFieldValue[k]
                         v = None  # type: Optional[CommentedMap]
                         if not isinstance(val, CommentedMap):
-                            if idmapField in loader.mapPredicate:
-                                v = CommentedMap(
-                                    ((loader.mapPredicate[idmapField], val),))
-                                v.lc.add_kv_line_col(
-                                    loader.mapPredicate[idmapField],
-                                    document[idmapField].lc.data[k])
-                                v.lc.filename = document.lc.filename
-                            else:
-                                raise validate.ValidationException(
-                                    "mapSubject '%s' value '%s' is not a dict"
-                                    "and does not have a mapPredicate", k, v)
+                            for subject in (idmapField, k, None):
+                                if subject in loader.mapPredicate:
+                                    v = CommentedMap(
+                                        ((loader.mapPredicate[subject], val),))
+                                    v.lc.add_kv_line_col(
+                                        loader.mapPredicate[subject],
+                                        document[idmapField].lc.data[k])
+                                    v.lc.filename = document.lc.filename
+                                    break
+                                if subject is None:
+                                    raise validate.ValidationException(
+                                        "mapSubject '%s' value '%s' is not a dict"
+                                        "and does not have a mapPredicate", k, v)
                         else:
                             v = val
 
