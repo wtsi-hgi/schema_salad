@@ -636,8 +636,9 @@ class Loader(object):
                                     break
                                 if subject is None:
                                     raise validate.ValidationException(
-                                        "mapSubject '%s' value '%s' is not a dict"
-                                        "and does not have a mapPredicate", k, v)
+                                        "Value for key '%s': '%s' is not an object and the schema does "
+                                        "not specify a default field to assign the value."
+                                        % (k, json.dumps(val, indent=4)))
                         else:
                             v = val
 
