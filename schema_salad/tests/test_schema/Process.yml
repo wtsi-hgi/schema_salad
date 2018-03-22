@@ -742,3 +742,5 @@ $graph:
         type: array
         items: InputSchema
       doc: The list of type definitions.
+      jsonldPredicate:
+        mapSubject: name

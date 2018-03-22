@@ -624,9 +624,9 @@ class Loader(object):
                     for k in sorted(idmapFieldValue.keys()):
                         val = idmapFieldValue[k]
                         v = None  # type: Optional[CommentedMap]
-                        if not isinstance(val, CommentedMap):
-                            for subject in (idmapField, k, None):
-                                if subject in loader.mapPredicate:
+                        for subject in (idmapField, k):
+                            if subject in loader.mapPredicate:
+                                if (not isinstance(val, CommentedMap)) or loader.mapPredicate[subject] not in val:
                                     v = CommentedMap(
                                         ((loader.mapPredicate[subject], val),))
                                     v.lc.add_kv_line_col(
@@ -634,13 +634,15 @@ class Loader(object):
                                         document[idmapField].lc.data[k])
                                     v.lc.filename = document.lc.filename
                                     break
-                                if subject is None:
-                                    raise validate.ValidationException(
-                                        "Value for key '%s': '%s' is not an object and the schema does "
-                                        "not specify a default field to assign the value."
-                                        % (k, json.dumps(val, indent=4)))
-                        else:
-                            v = val
+
+                        if v is None:
+                            if isinstance(val, CommentedMap):
+                                v = val
+                            else:
+                                raise validate.ValidationException(
+                                    "Value for key '%s': %s is not an object and the schema does "
+                                    "not specify a default field to assign the value."
+                                    % (k, json.dumps(val, indent=4)))
 
                         v[loader.idmap[idmapField]] = k
                         v.lc.add_kv_line_col(loader.idmap[idmapField],
@@ -649,6 +651,8 @@ class Loader(object):
 
                         ls.lc.add_kv_line_col(
                             len(ls), document[idmapField].lc.data[k])
+
+                        self._resolve_idmap(v, loader)
 
                         ls.lc.filename = document.lc.filename
                         ls.append(v)
