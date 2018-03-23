@@ -303,6 +303,11 @@ $graph:
         assigned to the field specified by this record's
         `mapPredicate`.
 
+    - name: aliases
+      type: string[]?
+      jsonldPredicate:
+        _type: "@id"
+        identity: true
 
 - name: SaladEnumSchema
   docParent: "#Schema"

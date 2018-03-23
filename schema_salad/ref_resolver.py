@@ -311,6 +311,7 @@ class Loader(object):
         self.nolinkcheck = set()        # type: Set[Text]
         self.vocab = {}                 # type: Dict[Text, Text]
         self.rvocab = {}                # type: Dict[Text, Text]
+        self.aliases = {}               # type: Dict[Text, Text]
         self.idmap = {}                 # type: Dict[Text, Any]
         self.mapPredicate = {}          # type: Dict[Text, Text]
         self.type_dsl_fields = set()    # type: Set[Text]
@@ -328,6 +329,9 @@ class Loader(object):
         # type: (...) -> Text
         if url in (u"@id", u"@type"):
             return url
+
+        if vocab_term and url in self.rvocab:
+            return self.rvocab[url]
 
         if vocab_term and url in self.vocab:
             return url
@@ -438,6 +442,8 @@ class Loader(object):
 
         _logger.debug("ctx is %s", self.ctx)
 
+        aliases = []
+
         for key, value in self.ctx.items():
             if value == u"@id":
                 self.identifiers.append(key)
@@ -467,6 +473,8 @@ class Loader(object):
                     self.mapPredicate[key] = value[u"mapPredicate"]
 
                 if u"@id" in value:
+                    if value.get("alias"):
+                        aliases.append(key)
                     self.vocab[key] = value[u"@id"]
 
                 if value.get(u"subscope"):
@@ -476,7 +484,15 @@ class Loader(object):
                 self.vocab[key] = value
 
         for k, v in self.vocab.items():
-            self.rvocab[self.expand_url(v, u"", scoped_id=False)] = k
+            if k not in aliases:
+                self.rvocab[self.expand_url(v, u"", scoped_id=False)] = k
+
+        for a in aliases:
+            # transform alias term B to primary term A:
+            # - look up alias to get fully qualified term
+            # - map fully qualified term to primary term
+            # - assign mapping from alias to primary term
+            self.rvocab[a] = self.rvocab[self.vocab[a]]
 
         self.identifiers.sort()
 
@@ -624,7 +640,13 @@ class Loader(object):
                     for k in sorted(idmapFieldValue.keys()):
                         val = idmapFieldValue[k]
                         v = None  # type: Optional[CommentedMap]
+
+                        # idmapField (mapSubject)
+                        # resolve k
+                        #
+
                         for subject in (idmapField, k):
+                            subject = loader.expand_url(subject, u"", scoped_id=False, vocab_term=True)
                             if subject in loader.mapPredicate:
                                 if (not isinstance(val, CommentedMap)) or loader.mapPredicate[subject] not in val:
                                     v = CommentedMap(

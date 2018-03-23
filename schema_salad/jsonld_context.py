@@ -170,6 +170,13 @@ def process_type(t,             # type: Dict[str, Any]
                 "mapPredicate": t["mapPredicate"]
             }
 
+        if "aliases" in t:
+            for a in t["aliases"]:
+                context[a] = {
+                    "@id": predicate,
+                    "alias": True
+                }
+
     elif t["type"] == "enum":
         _logger.debug("Processing enum %s", t.get("name"))
 

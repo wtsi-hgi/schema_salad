@@ -796,6 +796,7 @@ $graph:
     Define a list of environment variables which will be set in the
     execution environment of the tool.  See `EnvironmentDef` for details.
   mapPredicate: envDef
+  aliases: [environment]
   fields:
     - name: class
       type: string
