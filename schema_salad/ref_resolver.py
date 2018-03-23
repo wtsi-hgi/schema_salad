@@ -314,6 +314,7 @@ class Loader(object):
         self.aliases = {}               # type: Dict[Text, Text]
         self.idmap = {}                 # type: Dict[Text, Any]
         self.mapPredicate = {}          # type: Dict[Text, Text]
+        self.mapPredicateAllowObject = {}  # type: Dict[Text, bool]
         self.type_dsl_fields = set()    # type: Set[Text]
         self.subscopes = {}             # type: Dict[Text, Text]
 
@@ -471,6 +472,9 @@ class Loader(object):
 
                 if value.get(u"mapPredicate"):
                     self.mapPredicate[key] = value[u"mapPredicate"]
+
+                if value.get(u"mapPredicateAllowObject"):
+                    self.mapPredicateAllowObject[key] = True
 
                 if u"@id" in value:
                     if value.get("alias"):
@@ -648,7 +652,7 @@ class Loader(object):
                         for subject in (idmapField, k):
                             subject = loader.expand_url(subject, u"", scoped_id=False, vocab_term=True)
                             if subject in loader.mapPredicate:
-                                if (not isinstance(val, CommentedMap)) or loader.mapPredicate[subject] not in val:
+                                if (not isinstance(val, CommentedMap)) or (loader.mapPredicateAllowObject.get(subject) and loader.mapPredicate[subject] not in val):
                                     v = CommentedMap(
                                         ((loader.mapPredicate[subject], val),))
                                     v.lc.add_kv_line_col(

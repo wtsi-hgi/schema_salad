@@ -167,7 +167,8 @@ def process_type(t,             # type: Dict[str, Any]
         if "mapPredicate" in t:
             context[recordname] = {
                 "@id": predicate,
-                "mapPredicate": t["mapPredicate"]
+                "mapPredicate": t["mapPredicate"],
+                "mapPredicateAllowObject": (len(t.get("fields", [])) == 1)
             }
 
         if "aliases" in t:
